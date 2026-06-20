@@ -10,6 +10,8 @@ source .venv/bin/activate
 
 pip3 install -r requirements.txt
 
+python manage.py populate_songs -- para a API
+
 python3 manage.py runserver
 
 python3 manage.py makemigrations
