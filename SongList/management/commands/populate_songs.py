@@ -8,14 +8,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Lista de artistas/bandas populares para buscar
         artistas = [
-            'Beatles', 'Queen', 'Charli XCX', 'Linkin Park',
+            'Beatles', 'Queen', 'Charli XCX', 'Linkin Park', "Magdalena Bay",
             'Beyoncé', 'Britney Spears', 'Sade', 'Tears For Fears',
             'Sabrina Carpenter', 'Olivia Rodrigo', 'Madonna', 'Michael Jackson',
             'Elvis Presley', 'Fleetwood Mac', 'Bruno Mars', "Clairo", 'Dua Lipa',
             'Hayley Williams', 'Paramore', 'Billie Eilish', 'Phoebe Bridgers',
             "underscores", "Ninajirachi", 'Rina Sawayama', 'Mitski', 'FKA Twigs', 
-            'Arctic Monkeys', 'The Strokes', "Slayyter", "Oklou",
-            "PinkPantheress", "Grimes", "Phil Collins", "Marina Sena"
+            'Arctic Monkeys', 'The Strokes', "Slayyter", "Oklou", "Sky Ferreira",
+            "PinkPantheress", "Grimes", "Phil Collins", "Marina Sena",
+            "Chappel Roan", "Caroline Polachek", "Hozier", "Addison Rae",
+            "Doja Cat", "Lady Gaga", "Gorillaz", "The Marías",
         ]
 
         total_adicionadas = 0
