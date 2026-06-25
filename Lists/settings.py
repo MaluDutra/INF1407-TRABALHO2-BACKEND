@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from Lists import utils
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,7 +48,25 @@ INSTALLED_APPS = [
     "rest_framework",
     "SongList",
     "corsheaders",
+    "drf_spectacular",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS':
+    'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'MeuSite API',
+    'DESCRIPTION': 'API do sistema MeuSite',
+    'VERSION': '1.0.0',
+
+    # Muito útil no Codespace
+    'SERVERS': [
+        {'url': 'https://psychic-space-eureka-px9rj7gx565f74j4-8000.app.github.dev'},
+        {'url': 'http://localhost:8000'},
+    ],
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -126,3 +146,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+
+PORTA_DJANGO = utils.detectar_porta()
+AMBIENTE = utils.detectar_ambiente()
+PROTOCOLO = utils.detectar_protocolo()
+DOMINIO = utils.detectar_dominio()
+
+if AMBIENTE == "CODESPACE":
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https',)
+    USE_X_FORWARDED_HOST = True
+    CS_DOMAIN = DOMINIO
+elif AMBIENTE == "LOCAL":
+    # Configurações para rodar localmente
+    CS_DOMAIN = f"localhost:{PORTA_DJANGO}"
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'MeuSite API',
+    'DESCRIPTION': 'API do sistema MeuSite',
+    'VERSION': '1.0.0',
+    # Muito útil no Codespace
+    'SERVERS': [{'url': f'{PROTOCOLO}://{CS_DOMAIN}'},]
+}

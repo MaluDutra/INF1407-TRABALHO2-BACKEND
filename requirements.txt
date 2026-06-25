@@ -4,3 +4,5 @@ pillow
 setuptools
 django-cors-headers
 requests
+pyyaml 
+drf-spectacular 

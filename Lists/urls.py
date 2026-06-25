@@ -19,7 +19,17 @@ from django.contrib import admin
 from django.urls import path
 from django.urls.conf import include
 
+from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import SpectacularSwaggerView
+from drf_spectacular.views import SpectacularRedocView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("SongList/", include ('SongList.urls')),
+    # Schema OpenAPI JSON
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Swagger UI
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
+    # ReDoc UI
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),
 ]
