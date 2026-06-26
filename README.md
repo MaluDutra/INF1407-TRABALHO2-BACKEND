@@ -10,9 +10,11 @@ Backend em Django + Django REST Framework que serve a API REST consumida pelo fr
 
 ## Descrição do projeto
 
-O **SongList** é um catálogo colaborativo de músicas. Usuários autenticados podem cadastrar, editar e remover músicas do acervo, enquanto visitantes podem apenas visualizar a lista. O backend expõe uma API REST documentada via Swagger, autenticação por JWT e um fluxo completo de gerência de usuário (cadastro, login, troca de senha e recuperação por código).
+O **SongList** é um catálogo colaborativo de músicas. Visitantes podem ver todo o acervo, e usuários autenticados podem cadastrar suas próprias músicas no catálogo. Cada música registra automaticamente quem foi seu criador, e **apenas o criador pode editá-la ou removê-la** — esse vínculo dá a cada usuário uma visão distinta da aplicação: a lista de músicas é a mesma para todos, mas as ações disponíveis em cada linha são individuais.
 
-A base inicial de músicas é populada automaticamente a partir da [iTunes Search API](https://performance-partners.apple.com/search-api) por meio de um comando de management próprio.
+O backend expõe uma API REST documentada via Swagger, com autenticação por JWT e um fluxo completo de gerência de usuário (cadastro, login, troca de senha e recuperação por código).
+
+A base inicial de músicas é populada automaticamente a partir da [iTunes Search API](https://performance-partners.apple.com/search-api) por meio de um comando de management próprio. Essas músicas pré-existentes ficam sem criador e funcionam como um acervo público que ninguém pode editar.
 
 ## Links
 
@@ -95,9 +97,9 @@ INF1407-TRABALHO2-BACKEND/
 │   ├── urls.py
 │   └── utils.py            # Detecção automática de ambiente
 ├── SongList/               # App de músicas (CRUD)
-│   ├── models.py
+│   ├── models.py           # Musica com FK para o criador
 │   ├── serializers.py
-│   ├── views.py
+│   ├── views.py            # Autorização por dono em PUT/DELETE
 │   ├── urls.py
 │   └── management/
 │       └── commands/
@@ -116,21 +118,23 @@ INF1407-TRABALHO2-BACKEND/
 
 ### Autenticação
 
-| Método | Endpoint                | Descrição                              | Auth |
-| ------ | ----------------------- | -------------------------------------- | ---- |
-| POST   | `/api/token/`           | Obtém par de tokens JWT (access + refresh) | Não |
-| POST   | `/api/token/refresh/`   | Renova o token de acesso               | Não  |
-| POST   | `/api/token/verify/`    | Verifica se um token é válido          | Não  |
+| Método | Endpoint                | Descrição                                  | Auth |
+| ------ | ----------------------- | ------------------------------------------ | ---- |
+| POST   | `/api/token/`           | Obtém par de tokens JWT (access + refresh) | Não  |
+| POST   | `/api/token/refresh/`   | Renova o token de acesso                   | Não  |
+| POST   | `/api/token/verify/`    | Verifica se um token é válido              | Não  |
 
 ### Músicas (CRUD)
 
-| Método | Endpoint                              | Descrição                          | Auth |
-| ------ | ------------------------------------- | ---------------------------------- | ---- |
-| GET    | `/SongList/variasmusicas/`            | Lista todas as músicas             | Não  |
-| POST   | `/SongList/criar/`                    | Cria uma nova música               | Sim  |
-| GET    | `/SongList/umamusica/<id>/`           | Retorna uma música específica      | Não  |
-| PUT    | `/SongList/umamusica/<id>/`           | Atualiza uma música                | Sim  |
-| DELETE | `/SongList/variasmusicas/`            | Remove uma lista de IDs            | Sim  |
+| Método | Endpoint                              | Descrição                                          | Auth                  |
+| ------ | ------------------------------------- | -------------------------------------------------- | --------------------- |
+| GET    | `/SongList/variasmusicas/`            | Lista todas as músicas                             | Não                   |
+| POST   | `/SongList/criar/`                    | Cria uma nova música (criador = usuário autenticado) | Sim                 |
+| GET    | `/SongList/umamusica/<id>/`           | Retorna uma música específica                      | Não                   |
+| PUT    | `/SongList/umamusica/<id>/`           | Atualiza uma música                                | Sim — só o criador    |
+| DELETE | `/SongList/variasmusicas/`            | Remove uma lista de IDs                            | Sim — só as do criador|
+
+> Em `PUT`, tentativas de editar música de outro usuário retornam **403 Forbidden**. Em `DELETE`, IDs que não pertencem ao usuário autenticado são silenciosamente ignorados.
 
 ### Gerência de usuário
 
@@ -180,6 +184,8 @@ curl -X POST https://inf1407-backend.onrender.com/SongList/criar/ \
   -d '{"titulo":"Bohemian Rhapsody","artista":"Queen","album":"A Night at the Opera","ano":1975}'
 ```
 
+A resposta inclui o campo `criador` com o ID do usuário autenticado — esse vínculo é o que permite que só o dono edite ou remova a música depois.
+
 ### 4. Listar todas as músicas (público)
 
 ```bash
@@ -202,10 +208,10 @@ Pela interface do Swagger é possível autenticar clicando em **Authorize** e co
 
 ![Funções de Gerenciamento](docs/gerenciamento.png)
 
-
 ## O que funcionou
 
 - CRUD completo das músicas (listar, criar, ler por id, atualizar, deletar em lote)
+- **Visões diferentes por usuário:** cada música mantém o vínculo com seu criador, e apenas ele pode atualizá-la ou removê-la — tentativas de outros usuários retornam 403 ou são silenciosamente ignoradas
 - Autenticação JWT com obtenção, renovação e verificação de tokens
 - Endpoints protegidos exigindo token válido (criar, atualizar e deletar músicas)
 - Cadastro de novo usuário
@@ -216,8 +222,10 @@ Pela interface do Swagger é possível autenticar clicando em **Authorize** e co
 - Comando `populate_songs` puxando músicas da iTunes Search API
 - Deploy no Render com HTTPS funcionando
 - Detecção automática de ambiente (Local, Codespace, Render) ajustando domínio e protocolo no Swagger
+- Músicas pré-carregadas pelo comando `populate_songs` ficam sem criador e, portanto, **nenhum usuário consegue editar ou remover essas músicas pela API**, apenas visualizá-las. Esse comportamento é intencional (funcionam como acervo público), mas vale registrar caso pareça inesperado.
 
 ## O que não funcionou
 
-- **Envio real de email de recuperação de senha no Render.** Em produção (no render.com) não há um servidor SMTP configurado gratuitamente, então o email não chega na caixa do usuário. Como solução de contorno, preferiu-se enviar o email de recuperação de senha pelo próprio console no render.com, com `EMAIL_BACKEND` apontando para o console e o token aparecendo no terminal.
+- **Envio real de email de recuperação de senha no Render.** Em produção (no Render) não há um servidor SMTP configurado gratuitamente, então o email não chega na caixa do usuário. Como solução de contorno, preferiu-se enviar o email de recuperação de senha pelo próprio console no Render, com `EMAIL_BACKEND` apontando para o console e o token aparecendo no terminal.
 - O método `DELETE /SongList/variasmusicas/` não é exibido com o corpo da requisição no Swagger, porque o `drf-spectacular` não suporta descrever request body em DELETE (limitação documentada da biblioteca).
+
