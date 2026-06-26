@@ -138,4 +138,51 @@ class PasswordResetView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+    
+    @extend_schema(
+        summary="Confirmar redefinição de senha",
+        description="Permite que um usuário confirme a redefinição de senha fornecendo um código de redefinição e a nova senha.",
+        tags=["accounts"],
+        request=ResetPasswordConfirmSerializer,
+        responses={
+            200: "Senha redefinida com sucesso",
+            400: "Código de redefinição inválido ou expirado"
+        },
+        examples=[
+            OpenApiExample(
+                "Exemplo de requisição para confirmar redefinição de senha",
+                value={
+                    "code": "código-de-redefinição-aqui",
+                    "new_password": "S12345678!"
+                },
+            ),
+        ],
+    )
+    def put(self, request):
+        '''
+        Lida com a confirmação da redefinição de senha.
+        Espera receber um código de redefinição e a nova senha no corpo da requisição.
+        Verifica se o código é válido e, se for, redefine a senha do usuário associado.
+        '''
+        serializer = ResetPasswordConfirmSerializer(data=request.data)
+        if serializer.is_valid():
+            code = serializer.validated_data['code']
+            new_password = serializer.validated_data['new_password']
+            try:
+                reset_code = PasswordResetCode.objects.get(code=code, used=False)
+            except PasswordResetCode.DoesNotExist:
+                return Response({'error': 'Código de redefinição inválido ou já utilizado'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if reset_code.is_expired():
+                return Response({'error': 'Código de redefinição expirado'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = reset_code.user
+            user.set_password(new_password)
+            user.save()
+            reset_code.used = True
+            reset_code.save()
+            return Response({'status': 'Senha redefinida com sucesso'}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

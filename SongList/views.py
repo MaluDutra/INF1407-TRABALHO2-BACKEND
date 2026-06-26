@@ -17,13 +17,16 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Create your views here.
 
-# Para retornar uma música específica
+# Para retornar uma música específica e atualizar
 class MusicaView(APIView):
-    authentication_classes = []
+    authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
-    # auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
+    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
+
+    def get_permissions(self):
+        if self.request.method == 'PUT':
+            return [permission() for permission in [IsAuthenticated]]
+        return [permission() for permission in self.permission_classes]
 
     @extend_schema(
         summary="Retorna uma música",
@@ -208,11 +211,9 @@ class MusicasView(APIView):
 
 # Para criar uma nova música
 class MusicaCreateView(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated]
-    # auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
     
     @extend_schema(
         summary="Cria uma nova música",
