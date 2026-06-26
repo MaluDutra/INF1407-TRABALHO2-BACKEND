@@ -185,6 +185,17 @@ if AMBIENTE == "CODESPACE":
 elif AMBIENTE == "LOCAL":
     # Configurações para rodar localmente
     CS_DOMAIN = f"localhost:{PORTA_DJANGO}"
+else:
+    # Configurações para Produção (Render.com)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https',)
+    USE_X_FORWARDED_HOST = True
+    
+    # Pega o domínio oficial gerado pelo Render
+    CS_DOMAIN = os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'inf1407-backend.onrender.com')
+
+    # Força o HTTPS para o Swagger não tentar fazer requisições inseguras no Render
+    PROTOCOLO = 'https'
+
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'SongList API',
