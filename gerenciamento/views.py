@@ -18,6 +18,7 @@ from gerenciamento.models import PasswordResetCode
 from gerenciamento.serializers import ChangePasswordSerializer
 from gerenciamento.serializers import ResetPasswordRequestSerializer
 from gerenciamento.serializers import ResetPasswordConfirmSerializer
+from gerenciamento.serializers import RegisterSerializer
 
 from rest_framework import status
 from drf_spectacular.utils import OpenApiExample
@@ -213,3 +214,49 @@ class PasswordResetView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+class RegisterView(APIView):
+    """Endpoint para cadastro de novos usuários."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Cadastrar novo usuário",
+        description="Cria um usuário novo a partir de username, e-mail e senha.",
+        tags=["gerenciamento"],
+        request=RegisterSerializer,
+        responses={
+            201: "Usuário criado com sucesso",
+            400: "Dados inválidos ou usuário já existe",
+        },
+        examples=[
+            OpenApiExample(
+                "Exemplo de requisição para cadastro",
+                value={
+                    "username": "usuario123",
+                    "email": "usuario@exemplo.com",
+                    "password": "SenhaForte123!",
+                    "password_confirm": "SenhaForte123!",
+                },
+            ),
+        ],
+    )
+    def post(self, request):
+        '''
+        Cria um novo usuário no sistema.
+
+        Recebe username, email, password e password_confirm no corpo da requisição.
+        '''
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
