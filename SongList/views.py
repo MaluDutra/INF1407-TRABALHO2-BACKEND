@@ -1,7 +1,8 @@
 """Views da API para a aplicação de músicas.
 
 Este módulo implementa endpoints REST para operações de criação, listagem,
-consulta, atualização e exclusão de músicas.
+consulta, atualização e exclusão de músicas. A atualização e a exclusão
+exigem que o usuário autenticado seja o criador da música.
 """
 
 from SongList.serializers import MusicaSerializer
@@ -17,23 +18,19 @@ from drf_spectacular.utils import OpenApiTypes
 
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import permission_classes
-from rest_framework.decorators import api_view
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-# Create your views here.
 
 # Para retornar uma música específica e atualizar
 class MusicaView(APIView):
     """API view para consultar e atualizar uma música existente.
 
     GET  /músicas/{pk}/  -> retorna os dados de uma música específica.
-    PUT  /músicas/{pk}/  -> atualiza os dados da música indicada pelo ID.
+    PUT  /músicas/{pk}/  -> atualiza os dados da música; apenas o criador pode.
     """
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
-    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
 
     # Sobrescreve o método get_permissions para permitir que qualquer usuário possa consultar uma música, mas apenas usuários autenticados possam atualizá-la.
     def get_permissions(self):
@@ -61,6 +58,7 @@ class MusicaView(APIView):
                     "artista": "Artista Exemplo",
                     "album": "Álbum Demo",
                     "ano": 2024,
+                    "criador": 3,
                 },
                 response_only=True,
             ),
@@ -83,12 +81,16 @@ class MusicaView(APIView):
 
     @extend_schema(
         summary="Atualiza uma música",
-        description="Atualiza os dados de uma música existente com base no ID e nos dados fornecidos.",
+        description=(
+            "Atualiza os dados de uma música existente. Apenas o usuário "
+            "que criou a música pode atualizá-la."
+        ),
         tags=["Músicas"],
         request=MusicaSerializer,
         responses={
             200: MusicaSerializer,
             400: "Dados inválidos. Verifique os campos e tente novamente.",
+            403: "Apenas o criador da música pode atualizá-la.",
             404: "Não foi encontrada música com o ID fornecido.",
         },
         examples=[
@@ -102,22 +104,14 @@ class MusicaView(APIView):
                 },
                 request_only=True,
             ),
-            OpenApiExample(
-                "Exemplo de resposta de atualização",
-                value={
-                    "id": 1,
-                    "titulo": "Minha música atualizada",
-                    "artista": "Artista Exemplo",
-                    "album": "Álbum Atualizado",
-                    "ano": 2025,
-                },
-                response_only=True,
-            ),
         ],
     )
     def put(self, request, pk):
         """
         Atualiza uma música específica.
+
+        Apenas o usuário que criou a música pode editá-la. Caso outro usuário
+        tente alterar, a API responde com 403 (Forbidden).
 
         Args:
             request: request HTTP contendo os dados a serem atualizados.
@@ -128,6 +122,13 @@ class MusicaView(APIView):
         except Musica.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+        # Bloqueia tentativas de editar música de outro usuário
+        if musica.criador_id != request.user.id:
+            return Response(
+                {'error': 'Apenas o criador da música pode atualizá-la.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = MusicaSerializer(musica, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -135,24 +136,23 @@ class MusicaView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Para listas as musicas
+# Para listar as músicas
 class MusicasView(APIView):
     """API view para operações sobre coleções de músicas.
 
     GET    /músicas/  -> lista todas as músicas.
-    DELETE /músicas/  -> exclui múltiplas músicas por ID.
+    DELETE /músicas/  -> exclui músicas do próprio usuário.
     """
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
-    auth = [{'bearerAuth': []}]  # para o Swagger mostrar que é necessário o token JWT para exclusão
 
     # Sobrescreve o método get_permissions para permitir que qualquer usuário possa listar músicas, mas apenas usuários autenticados possam excluí-las.
     def get_permissions(self):
         if self.request.method == 'DELETE':
             return [permission() for permission in [IsAuthenticated]]
         return [permission() for permission in self.permission_classes]
-    
+
     @extend_schema(
         summary="Lista músicas",
         description="Retorna a lista de todas as músicas cadastradas, ordenadas por título.",
@@ -160,28 +160,6 @@ class MusicasView(APIView):
         responses={
             200: MusicaSerializer(many=True),
         },
-        examples=[
-            OpenApiExample(
-                "Exemplo de lista de músicas",
-                value=[
-                    {
-                        "id": 1,
-                        "titulo": "Minha música",
-                        "artista": "Artista Exemplo",
-                        "album": "Álbum Demo",
-                        "ano": 2024,
-                    },
-                    {
-                        "id": 2,
-                        "titulo": "Outra música",
-                        "artista": "Outro Artista",
-                        "album": "Outro Álbum",
-                        "ano": 2023,
-                    },
-                ],
-                response_only=True,
-            ),
-        ],
     )
     def get(self, request):
         """
@@ -196,11 +174,15 @@ class MusicasView(APIView):
 
     @extend_schema(
         summary="Exclui várias músicas",
-        description="Exclui as músicas indicadas na lista de IDs fornecida no corpo da requisição.",
+        description=(
+            "Exclui as músicas indicadas na lista de IDs fornecida no corpo "
+            "da requisição. Apenas músicas criadas pelo próprio usuário são "
+            "removidas; IDs de músicas de outros usuários são silenciosamente "
+            "ignorados."
+        ),
         tags=["Músicas"],
         responses={
             204: "Nenhum conteúdo retornado.",
-            404: "Não foi possível encontrar um dos IDs informados.",
         },
         examples=[
             OpenApiExample(
@@ -212,40 +194,34 @@ class MusicasView(APIView):
     )
     def delete(self, request):
         """
-        Exclui várias músicas pelo ID.
+        Exclui várias músicas pelo ID, restringindo-se às do próprio usuário.
 
         Args:
             request: request HTTP contendo a lista de IDs a excluir.
         """
-        id_erro = ""
-        erro = False
-        for id in request.data:
-            musica = Musica.objects.get(id=id)
-            if musica:
-                musica.delete()
-            else:
-                id_erro += str(id)
-                erro = True
-        if erro:
-            return Response({'error': f'item [{id_erro}] não encontrado'},status.HTTP_404_NOT_FOUND)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        ids = request.data if isinstance(request.data, list) else []
+        # Filtra apenas as músicas que pertencem ao usuário autenticado
+        Musica.objects.filter(id__in=ids, criador=request.user).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # Para criar uma nova música
 class MusicaCreateView(APIView):
     """API view para criar novas músicas.
 
-    POST /músicas/  -> cria uma nova música a partir dos dados fornecidos.
+    POST /músicas/  -> cria uma nova música; o criador é o usuário autenticado.
     """
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
-    
+
     @extend_schema(
         summary="Cria uma nova música",
-        description="Cria uma nova música no banco de dados a partir dos dados fornecidos no corpo da requisição.",
+        description=(
+            "Cria uma nova música no banco de dados a partir dos dados "
+            "fornecidos no corpo da requisição. O criador é definido "
+            "automaticamente como o usuário autenticado."
+        ),
         tags=["Músicas"],
         request=MusicaSerializer,
         responses={
@@ -263,29 +239,19 @@ class MusicaCreateView(APIView):
                 },
                 request_only=True,
             ),
-            OpenApiExample(
-                "Exemplo de resposta de criação",
-                value={
-                    "id": 1,
-                    "titulo": "Minha música",
-                    "artista": "Artista Exemplo",
-                    "album": "Álbum Demo",
-                    "ano": 2024,
-                },
-                response_only=True,
-            ),
         ],
     )
     def post(self, request):
         """
-        Cria uma nova música.
+        Cria uma nova música, atribuindo o criador automaticamente.
 
         Args:
             request: request HTTP contendo os dados da nova música.
         """
         serializer = MusicaSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            # Define o criador a partir do usuário autenticado
+            serializer.save(criador=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
