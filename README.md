@@ -17,5 +17,4 @@ python3 manage.py runserver
 python3 manage.py makemigrations
 python3 manage.py migrate
 
-admin: ericamalu
-senha: maluerica0304
+link pro swagger: https://inf1407-backend.onrender.com/swagger/
