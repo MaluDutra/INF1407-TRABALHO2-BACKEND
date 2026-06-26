@@ -1,3 +1,12 @@
+"""Views de gerenciamento de autenticação e recuperação de senha.
+
+Este módulo expõe endpoints para:
+- consultar o usuário autenticado;
+- alterar a senha do usuário autenticado;
+- solicitar redefinição de senha via token;
+- confirmar a redefinição de senha.
+"""
+
 import secrets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -23,6 +32,8 @@ from django.core.mail import EmailMultiAlternatives
 def whoami(request):
     '''
     Retorna os dados do usuário autenticado.
+    Esta função só deve ser chamada quando o usuário já estiver
+    autenticado, e devolve apenas informações básicas de identificação.
     '''
     dados = {
         'id': request.user.id,
@@ -31,6 +42,11 @@ def whoami(request):
     return Response(dados)
 
 class ChangePasswordView(APIView):
+    """Endpoint para alteração de senha do usuário autenticado.
+
+    O usuário deve estar autenticado para atualizar sua própria senha.
+    """
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -55,8 +71,9 @@ class ChangePasswordView(APIView):
     def put(self, request):
         '''
         Permite que o usuário autenticado altere sua senha.
-        Espera receber a senha antiga em 'old_password'
-        e a nova senha em 'new_password' no corpo da requisição.
+
+        A requisição deve conter os campos 'old_password' e 'new_password'.
+        Se a senha antiga estiver correta, a nova senha é salva no usuário.
         '''
         serializer = ChangePasswordSerializer(data=request.data)
 
@@ -71,6 +88,12 @@ class ChangePasswordView(APIView):
 
 
 class PasswordResetView(APIView):
+    """Endpoint para fluxo de recuperação de senha.
+
+    A view permite solicitar um token de redefinição por e-mail e confirmar
+    a redefinição utilizando este token.
+    """
+
     authentication_classes = [] # Desabilita autenticação para esta view
     permission_classes = [AllowAny] # Permite acesso sem autenticação
 
@@ -93,8 +116,10 @@ class PasswordResetView(APIView):
     def post(self, request):
         '''
         Lida com a solicitação de redefinição de senha.
-        Espera receber um e-mail no corpo da requisição para identificar o usuário.
-        Gera um token de redefinição de senha e envia um e-mail para o usuário com instruções.
+
+        Recebe um e-mail e, se o usuário existir, gera um código de reset
+        que é enviado por e-mail ao usuário. O token também é retornado
+        no corpo da resposta para fins de desenvolvimento/teste.
         '''
         serializer = ResetPasswordRequestSerializer(data=request.data)
 
@@ -162,8 +187,10 @@ class PasswordResetView(APIView):
     def put(self, request):
         '''
         Lida com a confirmação da redefinição de senha.
-        Espera receber um código de redefinição e a nova senha no corpo da requisição.
-        Verifica se o código é válido e, se for, redefine a senha do usuário associado.
+
+        Recebe o código de redefinição e a nova senha. Se o código existir,
+        não estiver expirado e ainda não tiver sido utilizado, a senha do
+        usuário é atualizada e o código é marcado como usado.
         '''
         serializer = ResetPasswordConfirmSerializer(data=request.data)
         if serializer.is_valid():
