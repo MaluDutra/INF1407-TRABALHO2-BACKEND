@@ -42,14 +42,15 @@ if ENV_PATH.exists():
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "localhost:8000", "127.0.0.1:8000"]
 
 # Lista de domínios confiáveis
 CSRF_TRUSTED_ORIGINS = [
     'https://localhost:8000',
-    'http://localhost:8000'
+    'http://localhost:8000',
+    "https://maludutra.github.io",
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
