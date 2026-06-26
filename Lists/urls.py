@@ -23,13 +23,24 @@ from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
 from drf_spectacular.views import SpectacularRedocView
 
+from rest_framework.permissions import AllowAny
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenVerifyView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("SongList/", include ('SongList.urls')),
+    path("gerenciamento/", include ('gerenciamento.urls')),
     # Schema OpenAPI JSON
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/', SpectacularAPIView.as_view(authentication_classes=[], permission_classes=[AllowAny],), name='schema'),
     # Swagger UI
-    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='schema-swagger-ui'),
+    path('swagger/', SpectacularSwaggerView.as_view(authentication_classes=[], permission_classes=[AllowAny], url_name='schema'), name='schema-swagger-ui'),
     # ReDoc UI
-    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='schema-redoc'),
+    path('redoc/', SpectacularRedocView.as_view(authentication_classes=[], permission_classes=[AllowAny], url_name='schema'), name='schema-redoc'),
+    # Token Views
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]

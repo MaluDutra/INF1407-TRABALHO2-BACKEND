@@ -6,3 +6,4 @@ django-cors-headers
 requests
 pyyaml 
 drf-spectacular 
+djangorestframework-simplejwt

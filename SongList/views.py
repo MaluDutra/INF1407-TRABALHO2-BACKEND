@@ -7,13 +7,22 @@ from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import OpenApiExample
 from drf_spectacular.utils import OpenApiParameter
-from drf_spectacular.utils import OpenApiResponse
 from drf_spectacular.utils import OpenApiTypes
+
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
+from rest_framework.decorators import api_view
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Create your views here.
 
 # Para retornar uma música específica
 class MusicaView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
+
     @extend_schema(
         summary="Retorna uma música",
         description="Retorna os dados de uma música específica pelo seu ID.",
@@ -23,23 +32,7 @@ class MusicaView(APIView):
         ],
         responses={
             200: MusicaSerializer,
-            404: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "detail": {"type": "string"},
-                    },
-                    "required": ["detail"],
-                },
-                description="Não foi encontrada música com o ID fornecido.",
-                examples=[
-                    OpenApiExample(
-                        "Música não encontrada",
-                        value={"detail": "Não foi encontrada música com o ID fornecido."},
-                        response_only=True,
-                    ),
-                ],
-            ),
+            404: "Não foi encontrada música com o ID fornecido.",
         },
         examples=[
             OpenApiExample(
@@ -78,40 +71,8 @@ class MusicaView(APIView):
         request=MusicaSerializer,
         responses={
             200: MusicaSerializer,
-            400: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "erro": {"type": "string"},
-                    },
-                    "required": ["erro"],
-                },
-                description="Dados inválidos. Verifique os campos e tente novamente.",
-                examples=[
-                    OpenApiExample(
-                        "Dados inválidos",
-                        value={"erro": "Dados inválidos. Verifique os campos e tente novamente."},
-                        response_only=True,
-                    ),
-                ],
-            ),
-            404: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "detail": {"type": "string"},
-                    },
-                    "required": ["detail"],
-                },
-                description="Não foi encontrada música com o ID fornecido.",
-                examples=[
-                    OpenApiExample(
-                        "Música não encontrada",
-                        value={"detail": "Não foi encontrada música com o ID fornecido."},
-                        response_only=True,
-                    ),
-                ],
-            ),
+            400: "Dados inválidos. Verifique os campos e tente novamente.",
+            404: "Não foi encontrada música com o ID fornecido.",
         },
         examples=[
             OpenApiExample(
@@ -159,6 +120,9 @@ class MusicaView(APIView):
 
 # Para listas as musicas
 class MusicasView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
     @extend_schema(
         summary="Lista músicas",
         description="Retorna a lista de todas as músicas cadastradas, ordenadas por título.",
@@ -207,27 +171,8 @@ class MusicasView(APIView):
         description="Exclui as músicas indicadas na lista de IDs fornecida no corpo da requisição.",
         tags=["Músicas"],
         responses={
-            204: OpenApiResponse(
-                response=None,
-                description="Nenhum conteúdo retornado.",
-            ),
-            404: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "error": {"type": "string"},
-                    },
-                    "required": ["error"],
-                },
-                description="Não foi possível encontrar um dos IDs informados.",
-                examples=[
-                    OpenApiExample(
-                        "Música não encontrada",
-                        value={"error": "item [ID] não encontrado"},
-                        response_only=True,
-                    ),
-                ],
-            ),
+            204: "Nenhum conteúdo retornado.",
+            404: "Não foi possível encontrar um dos IDs informados.",
         },
         examples=[
             OpenApiExample(
@@ -261,6 +206,10 @@ class MusicasView(APIView):
 
 # Para criar uma nova música
 class MusicaCreateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
+    
     @extend_schema(
         summary="Cria uma nova música",
         description="Cria uma nova música no banco de dados a partir dos dados fornecidos no corpo da requisição.",
@@ -268,23 +217,7 @@ class MusicaCreateView(APIView):
         request=MusicaSerializer,
         responses={
             201: MusicaSerializer,
-            400: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "erro": {"type": "string"},
-                    },
-                    "required": ["erro"],
-                },
-                description="Dados inválidos. Verifique os campos e tente novamente.",
-                examples=[
-                    OpenApiExample(
-                        "Dados inválidos",
-                        value={"erro": "Dados inválidos. Verifique os campos e tente novamente."},
-                        response_only=True,
-                    ),
-                ],
-            ),
+            400: "Dados inválidos. Verifique os campos e tente novamente.",
         },
         examples=[
             OpenApiExample(
