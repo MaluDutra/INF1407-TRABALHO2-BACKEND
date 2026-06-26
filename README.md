@@ -194,15 +194,14 @@ Pela interface do Swagger é possível autenticar clicando em **Authorize** e co
 
 ![Swagger UI](docs/swagger.png)
 
-### Endpoint de listagem de músicas
+### Funções do CRUD de músicas
 
-![Listagem de músicas](docs/listagem.png)
+![Funções de músicas](docs/musicas.png)
 
-### Fluxo de autenticação
+### Funções de gerenciamento
 
-![Autenticação JWT](docs/auth.png)
+![Funções de Gerenciamento](docs/gerenciamento.png)
 
-> As imagens ficam em `docs/` na raiz do repositório.
 
 ## O que funcionou
 

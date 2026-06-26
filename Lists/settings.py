@@ -81,19 +81,9 @@ REST_FRAMEWORK = {
     ),
 }
 
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'SongList API',
-    'DESCRIPTION': 'API do sistema SongList',
-    'VERSION': '1.0.0',
-
-    # Muito útil no Codespace
-    'SERVERS': [
-        {'url': 'https://psychic-space-eureka-px9rj7gx565f74j4-8000.app.github.dev'},
-        {'url': 'http://localhost:8000'},
-    ],
-}
-
 MIDDLEWARE = [
+    # para usar o CORS
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,8 +91,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # para usar o CORS
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "Lists.urls"
