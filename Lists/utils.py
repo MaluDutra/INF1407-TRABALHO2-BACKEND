@@ -132,7 +132,7 @@ def detectar_dominio() -> str:
         return f"{nome}-{PORTA}.{dom}"
 
     if AMBIENTE == "HEROKU":
-        return os.getenv("HEROKU_APP_NAME", "meuapp") + ".herokuapp.com"
+        return os.getenv("HEROKU_APP_NAME", "songList") + ".herokuapp.com"
 
     if AMBIENTE == "RAILWAY":
         return os.getenv("RAILWAY_STATIC_URL", "").replace("https://", "")
@@ -141,7 +141,7 @@ def detectar_dominio() -> str:
         return os.getenv("RENDER_EXTERNAL_HOSTNAME")
 
     if AMBIENTE == "AWS":
-        return os.getenv("DJANGO_DOMAIN", "meusite.com.br")
+        return os.getenv("DJANGO_DOMAIN", "songlist.com.br")
 
     return f"localhost:{PORTA}"
 

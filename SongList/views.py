@@ -1,3 +1,9 @@
+"""Views da API para a aplicação de músicas.
+
+Este módulo implementa endpoints REST para operações de criação, listagem,
+consulta, atualização e exclusão de músicas.
+"""
+
 from SongList.serializers import MusicaSerializer
 from rest_framework.views import APIView
 from SongList.models import Musica
@@ -19,10 +25,17 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Para retornar uma música específica e atualizar
 class MusicaView(APIView):
+    """API view para consultar e atualizar uma música existente.
+
+    GET  /músicas/{pk}/  -> retorna os dados de uma música específica.
+    PUT  /músicas/{pk}/  -> atualiza os dados da música indicada pelo ID.
+    """
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
     auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT
 
+    # Sobrescreve o método get_permissions para permitir que qualquer usuário possa consultar uma música, mas apenas usuários autenticados possam atualizá-la.
     def get_permissions(self):
         if self.request.method == 'PUT':
             return [permission() for permission in [IsAuthenticated]]
@@ -61,7 +74,6 @@ class MusicaView(APIView):
             request: request HTTP enviado pelo cliente.
             pk: ID da música a ser retornada.
         """
-        # 'pk' é o mesmo nome que colocamos em urls.py
         try:
             musica = Musica.objects.get(pk=pk)
         except Musica.DoesNotExist:
@@ -125,8 +137,21 @@ class MusicaView(APIView):
 
 # Para listas as musicas
 class MusicasView(APIView):
-    authentication_classes = []
+    """API view para operações sobre coleções de músicas.
+
+    GET    /músicas/  -> lista todas as músicas.
+    DELETE /músicas/  -> exclui múltiplas músicas por ID.
+    """
+
+    authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
+    auth = [{'bearerAuth': []}]  # para o Swagger mostrar que é necessário o token JWT para exclusão
+
+    # Sobrescreve o método get_permissions para permitir que qualquer usuário possa listar músicas, mas apenas usuários autenticados possam excluí-las.
+    def get_permissions(self):
+        if self.request.method == 'DELETE':
+            return [permission() for permission in [IsAuthenticated]]
+        return [permission() for permission in self.permission_classes]
     
     @extend_schema(
         summary="Lista músicas",
@@ -166,8 +191,6 @@ class MusicasView(APIView):
             request: request HTTP enviado pelo cliente.
         """
         queryset = Musica.objects.all().order_by('titulo')
-        # importante informar que o queryset terá mais
-        # de 1 resultado usando many=True
         serializer = MusicaSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -211,6 +234,11 @@ class MusicasView(APIView):
 
 # Para criar uma nova música
 class MusicaCreateView(APIView):
+    """API view para criar novas músicas.
+
+    POST /músicas/  -> cria uma nova música a partir dos dados fornecidos.
+    """
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     auth = [{'bearerAuth': []}] # para o Swagger mostrar que é necessário o token JWT

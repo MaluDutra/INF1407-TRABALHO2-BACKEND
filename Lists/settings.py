@@ -81,8 +81,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'MeuSite API',
-    'DESCRIPTION': 'API do sistema MeuSite',
+    'TITLE': 'SongList API',
+    'DESCRIPTION': 'API do sistema SongList',
     'VERSION': '1.0.0',
 
     # Muito útil no Codespace
@@ -186,8 +186,8 @@ elif AMBIENTE == "LOCAL":
     CS_DOMAIN = f"localhost:{PORTA_DJANGO}"
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'MeuSite API',
-    'DESCRIPTION': 'API do sistema MeuSite',
+    'TITLE': 'SongList API',
+    'DESCRIPTION': 'API do sistema SongList',
     'VERSION': '1.0.0',
     # Muito útil no Codespace
     'SERVERS': [{'url': f'{PROTOCOLO}://{CS_DOMAIN}'},]
